@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!-- In this file, you will ONLY need to change the fragment shader. -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<title>Blinn-Phong Bunny!</title>
+<style>
+input[type="range"] {
+    width: calc(100% - 530px);
+    min-width: 100px;
+}
+canvas {
+    float:left;
+}
+</style>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec3 vPosition;
+attribute vec3 vNormal;
+
+uniform mat4 mat;
+
+varying vec3 norm;
+varying vec3 pos;
+varying vec3 eye;
+void main()
+{
+    norm = mat3(mat) * vNormal;
+    eye = vec3(0, 0, 1) - (mat * vec4(vPosition, 1.0)).xyz;
+
+    // Ugly: Give us a right-handed coordinate system where the viewer
+    // is at (0, 0, 1) and is looking in the direction (0, 0, -1).
+    gl_Position = mat * vec4(vPosition, 1.0) * vec4(1.0, 1.0, -1.0, 1.0);
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+// This is the only part of this file you need to edit
+precision mediump float;
+
+uniform vec3 lightDir;
+uniform vec3 lightColor;
+uniform vec3 ambientColor;
+uniform vec3 surfaceDiffuse;
+uniform vec3 surfaceSpec;
+// mouse light variables
+uniform vec3 lightDirM;
+uniform vec3 lightColorM;
+uniform vec3 surfaceSpecM;
+
+varying vec3 norm;
+varying vec3 pos;
+varying vec3 eye;
+
+
+float shininess = 20.0;
+
+void main()
+{
+    // all vars with trailing 'M' deal with the mouse light
+    vec3 normN = normalize(norm);
+    vec3 lightDirN = normalize(lightDir);
+    vec3 lightDirMN = normalize(lightDirM);
+    vec3 answer = ambientColor * surfaceDiffuse;
+    float diffuseAmount = max(dot(normN, lightDirN), 0.0);
+    float diffuseAmountM = max(dot(normN, lightDirMN), 0.0);
+    answer += diffuseAmount * lightColor * surfaceDiffuse;
+    answer += diffuseAmountM * lightColorM * surfaceDiffuse;
+    vec3 halfVec = normalize(lightDirN + normalize(eye));
+    vec3 halfVecM = normalize(lightDirMN + normalize(eye));
+    
+    vec3 cSpec = lightColor * surfaceSpec * pow(max(dot(normN, halfVec), 0.0), shininess);
+    answer += cSpec;
+    vec3 cSpecM = lightColorM * surfaceSpecM * pow(max(dot(normN, halfVecM), 0.0), shininess);
+    answer += cSpecM;
+
+    // Use "pow" to do exponentiation
+    gl_FragColor = vec4(answer, 1.0);    
+}
+</script>
+
+<script type="text/javascript" src="Common/webgl-utils.js"></script>
+<script type="text/javascript" src="Common/initShaders.js"></script>
+<script type="text/javascript" src="Common/MV.js"></script>
+<script type="text/javascript" src="bunny.js"></script>
+<script type="text/javascript" src="shader.js"></script>
+</head>   
+
+<body>
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+<div id="status">&nbsp;</div>
+<h2>Rotation</h2>
+<label for="rot1">Rotation 1: </label>
+<input type="range" min="-180" max="180" value="0" step="any" id="rot1">
+
+<label for="rot2">Rotation 2: </label>
+<input type="range" min="-180" max="180" value="0" step="any" id="rot2">
+
+<label for="rot3">Rotation 3: </label>
+<input type="range" min="-180" max="180" value="0" step="any" id="rot3">
+
+<label for="scale1">Scale: </label>
+<input type="range" min="-2" max="4" value="1" step="any" id="scale1">
+
+<label for="t1">Translation 1: </label>
+<input type="range" min="-1" max="1" value="0" step="any" id="t1">
+
+<label for="t2">Translation 2: </label>
+<input type="range" min="-1" max="1" value="0" step="any" id="t2">
+</body>
+</html>
